@@ -121,6 +121,24 @@ def test_save_and_reload(tmp_path="output/_test_save.csv"):
 # Teste de ponta a ponta com o CSV real
 # ---------------------------------------------------------------------------
 
+def test_salary_cap():
+    from data_analyzer import _validate_ranges, SALARY_CAP
+    df = pd.DataFrame({"salario": [3000.0, 5000.0, 999999.0, 4500.0]})
+    df = _validate_ranges(df)
+    check("Salario acima do cap vira NaN", pd.isna(df.loc[2, "salario"]),
+          f"cap={SALARY_CAP}")
+    check("Salarios validos preservados", df["salario"].notna().sum() == 3)
+
+
+def test_nota_cap():
+    from data_analyzer import _validate_ranges
+    df = pd.DataFrame({"nota_avaliacao": [7.0, 10.5, 8.0, -1.0]})
+    df = _validate_ranges(df)
+    check("Nota acima de 10 vira NaN",  pd.isna(df.loc[1, "nota_avaliacao"]))
+    check("Nota negativa vira NaN",     pd.isna(df.loc[3, "nota_avaliacao"]))
+    check("Nota valida preservada",     df.loc[0, "nota_avaliacao"] == 7.0)
+
+
 def test_end_to_end():
     csv = os.path.join(os.path.dirname(__file__), "sample_data.csv")
     if not os.path.exists(csv):
@@ -137,9 +155,9 @@ def test_end_to_end():
     check("E2E -- linhas reduzidas",     len(df_clean) < len(df_raw),
           f"{len(df_raw)} -> {len(df_clean)}")
     check("E2E -- estatisticas geradas", bool(stats), str(list(stats.keys())[:3]))
-    check("E2E -- outlier Lucas detectado",
-          any(s.get("outliers", 0) > 0 for s in stats.values() if isinstance(s, dict)),
-          "salario 999999 deve ser outlier")
+    check("E2E -- dados limpos sem outliers extremos",
+          all(s.get("outliers", 0) == 0 for s in stats.values() if isinstance(s, dict)),
+          "apos correcao de ranges nao devem existir outliers")
 
 
 # ---------------------------------------------------------------------------
@@ -155,6 +173,8 @@ def run_all():
         test_statistics_accuracy,
         test_outlier_detection,
         test_no_numeric_columns,
+        test_salary_cap,
+        test_nota_cap,
         test_save_and_reload,
         test_end_to_end,
     ]

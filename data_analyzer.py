@@ -10,6 +10,10 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
+# Limite maximo aceitavel para salario — valores acima disso sao tratados
+# como erro de digitacao e definidos como nulos antes da analise estatistica.
+SALARY_CAP = 50_000
+
 
 def load_data(filepath: str) -> pd.DataFrame:
     """Carrega um CSV detectando separador automaticamente (virgula ou ponto-e-virgula)."""
@@ -45,8 +49,8 @@ def clean_data(df: pd.DataFrame) -> tuple:
     df = df[~dupes].reset_index(drop=True)
 
     df = _coerce_types(df)
+    df = _validate_ranges(df)
 
-    # Remove linhas onde todos os campos numericos sao nulos
     num_cols = df.select_dtypes(include="number").columns.tolist()
     if num_cols:
         all_null = df[num_cols].isnull().all(axis=1)
@@ -61,6 +65,30 @@ def clean_data(df: pd.DataFrame) -> tuple:
 
     log.info("Limpeza concluida -- %d linhas restantes", len(df))
     return df, report
+
+
+def _validate_ranges(df: pd.DataFrame) -> pd.DataFrame:
+    """Aplica regras de negocio para invalidar valores fora de range esperado.
+
+    Valores invalidos viram NaN — a linha nao e removida, apenas o campo.
+    Isso preserva o registro e deixa claro que houve um problema naquele campo.
+    """
+    if "salario" in df.columns and pd.api.types.is_numeric_dtype(df["salario"]):
+        invalid = df["salario"] > SALARY_CAP
+        if invalid.any():
+            log.warning(
+                "%d salario(s) acima de %s substituidos por NaN",
+                invalid.sum(), f"R$ {SALARY_CAP:,.0f}"
+            )
+            df.loc[invalid, "salario"] = np.nan
+
+    if "nota_avaliacao" in df.columns and pd.api.types.is_numeric_dtype(df["nota_avaliacao"]):
+        out_of_range = (df["nota_avaliacao"] < 0) | (df["nota_avaliacao"] > 10)
+        if out_of_range.any():
+            log.warning("%d nota(s) fora do range [0, 10] substituidas por NaN", out_of_range.sum())
+            df.loc[out_of_range, "nota_avaliacao"] = np.nan
+
+    return df
 
 
 def _is_text_col(series: pd.Series) -> bool:
