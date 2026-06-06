@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Analise de Dados</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0f1117;
+      --surface: #1a1d27;
+      --card:    #22263a;
+      --border:  #2e3350;
+      --accent:  #6c63ff;
+      --green:   #22c55e;
+      --yellow:  #eab308;
+      --red:     #ef4444;
+      --text:    #e2e8f0;
+      --muted:   #94a3b8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 32px;
+    }
+    .navbar-brand {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--text) !important;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .navbar-brand .dot {
+      width: 10px; height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* ── Layout ── */
+    .main { padding: 32px; max-width: 1400px; margin: 0 auto; }
+
+    /* ── Section titles ── */
+    .section-title {
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 24px;
+      height: 100%;
+    }
+    .card-label {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .card-value {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .card-sub {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .card-value.green  { color: var(--green); }
+    .card-value.red    { color: var(--red); }
+    .card-value.yellow { color: var(--yellow); }
+    .card-value.accent { color: var(--accent); }
+
+    /* ── Stat column card ── */
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 22px;
+    }
+    .stat-card h6 {
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 14px;
+      font-size: .9rem;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: .84rem;
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-row .label { color: var(--muted); }
+    .stat-row .val   { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    /* ── Types table ── */
+    .dtype-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+    .dtype-table th {
+      color: var(--muted);
+      font-weight: 500;
+      text-align: left;
+      padding: 6px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dtype-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+    .dtype-table tr:last-child td { border-bottom: none; }
+    .badge-type {
+      background: rgba(108,99,255,.18);
+      color: var(--accent);
+      font-size: .72rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    .badge-null {
+      background: rgba(239,68,68,.15);
+      color: var(--red);
+      font-size: .72rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    .badge-ok {
+      background: rgba(34,197,94,.12);
+      color: var(--green);
+      font-size: .72rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    /* ── Progress bar ── */
+    .pbar-wrap { background: var(--border); border-radius: 4px; height: 6px; width: 100%; }
+    .pbar      { background: var(--accent); height: 6px; border-radius: 4px; transition: width .6s; }
+    .pbar.red  { background: var(--red); }
+    .pbar.green{ background: var(--green); }
+
+    /* ── Data table ── */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .82rem;
+      white-space: nowrap;
+    }
+    .data-table thead tr {
+      background: rgba(108,99,255,.12);
+    }
+    .data-table th {
+      padding: 11px 14px;
+      text-align: left;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: .75rem;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+    }
+    .data-table th:hover { color: var(--text); }
+    .data-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .data-table tbody tr:hover { background: rgba(255,255,255,.03); }
+    .data-table tbody tr.outlier { background: rgba(239,68,68,.06); }
+    .data-table tbody tr.outlier td:first-child {
+      border-left: 3px solid var(--red);
+      padding-left: 11px;
+    }
+    .null-cell { color: var(--muted); font-style: italic; }
+    .outlier-badge {
+      background: rgba(239,68,68,.18);
+      color: var(--red);
+      font-size: .68rem;
+      padding: 1px 6px;
+      border-radius: 10px;
+      margin-left: 6px;
+      font-weight: 600;
+    }
+
+    /* ── Search & filter ── */
+    .search-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 7px 14px;
+      font-size: .85rem;
+      outline: none;
+      width: 260px;
+    }
+    .search-box:focus { border-color: var(--accent); }
+    .search-box::placeholder { color: var(--muted); }
+
+    /* ── IQR fence visual ── */
+    .iqr-bar {
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      position: relative;
+      margin-top: 8px;
+    }
+    .iqr-fill {
+      position: absolute;
+      height: 100%;
+      background: var(--accent);
+      border-radius: 4px;
+      opacity: .6;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 32px;
+      color: var(--muted);
+      font-size: .78rem;
+      border-top: 1px solid var(--border);
+      margin-top: 40px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .main { padding: 16px; }
+      .search-box { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ───── Navbar ───── -->
+<nav class="navbar">
+  <span class="navbar-brand">
+    <span class="dot"></span>
+    Dashboard &nbsp;/&nbsp; <span style="color:var(--muted);font-weight:400">Analise de Dados</span>
+  </span>
+  <span style="color:var(--muted);font-size:.8rem;margin-left:auto">
+    <i class="bi bi-table me-1"></i>
+    {{ report.linhas_depois }} registros &nbsp;|&nbsp;
+    <i class="bi bi-columns me-1"></i>
+    {{ columns|length }} colunas
+  </span>
+</nav>
+
+<!-- ───── Main ───── -->
+<div class="main">
+
+  <!-- ── Resumo de limpeza ── -->
+  <div class="section-title"><i class="bi bi-funnel-fill"></i> Limpeza dos Dados</div>
+  <div class="row g-3 mb-4">
+
+    <div class="col-6 col-md-3">
+      <div class="card">
+        <div class="card-label"><i class="bi bi-database me-1"></i>Linhas originais</div>
+        <div class="card-value accent">{{ report.linhas_antes }}</div>
+        <div class="card-sub">no arquivo CSV bruto</div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card">
+        <div class="card-label"><i class="bi bi-check2-circle me-1"></i>Linhas limpas</div>
+        <div class="card-value green">{{ report.linhas_depois }}</div>
+        <div class="card-sub">prontas para analise</div>
+        <div class="mt-2">
+          <div class="pbar-wrap">
+            <div class="pbar green" style="width:{{ (report.linhas_depois / report.linhas_antes * 100)|round(1) }}%"></div>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:4px">
+            {{ (report.linhas_depois / report.linhas_antes * 100)|round(1) }}% aproveitadas
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card">
+        <div class="card-label"><i class="bi bi-copy me-1"></i>Duplicatas</div>
+        <div class="card-value {% if report.duplicatas > 0 %}yellow{% else %}green{% endif %}">
+          {{ report.duplicatas }}
+        </div>
+        <div class="card-sub">linhas removidas</div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card">
+        <div class="card-label"><i class="bi bi-exclamation-triangle me-1"></i>Outliers</div>
+        <div class="card-value {% if total_outliers > 0 %}red{% else %}green{% endif %}">
+          {{ total_outliers }}
+        </div>
+        <div class="card-sub">detectados via IQR</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Tipos de dados ── -->
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-md-5">
+      <div class="section-title"><i class="bi bi-card-list"></i> Tipos de Dados</div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="dtype-table">
+          <thead>
+            <tr>
+              <th>Coluna</th>
+              <th>Tipo</th>
+              <th>Nulos</th>
+              <th>Cobertura</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for col, info in dtypes.items() %}
+            <tr>
+              <td style="font-weight:600">{{ col }}</td>
+              <td><span class="badge-type">{{ info.dtype }}</span></td>
+              <td>
+                {% if info.nulos > 0 %}
+                  <span class="badge-null">{{ info.nulos }} nulos</span>
+                {% else %}
+                  <span class="badge-ok">completo</span>
+                {% endif %}
+              </td>
+              <td style="width:120px">
+                {% set pct = ((report.linhas_depois - info.nulos) / report.linhas_depois * 100)|round(0)|int %}
+                <div class="pbar-wrap">
+                  <div class="pbar {% if pct < 80 %}red{% elif pct < 95 %}green{% else %}green{% endif %}"
+                       style="width:{{ pct }}%"></div>
+                </div>
+                <div style="font-size:.7rem;color:var(--muted);margin-top:2px">{{ pct }}%</div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Cards de estatisticas ── -->
+    <div class="col-12 col-md-7">
+      <div class="section-title"><i class="bi bi-bar-chart-line"></i> Estatisticas Numericas</div>
+      <div class="row g-3">
+        {% for col, s in stats.items() %}
+        <div class="col-12 col-sm-6">
+          <div class="stat-card">
+            <h6><i class="bi bi-hash me-1"></i>{{ col }}</h6>
+
+            {% set rng = (s.maximo or 0) - (s.minimo or 0) %}
+            {% if rng > 0 and s.q1 is not none and s.q3 is not none %}
+              {% set q1_pct = ((s.q1 - s.minimo) / rng * 100)|round(1) %}
+              {% set q3_pct = ((s.q3 - s.minimo) / rng * 100)|round(1) %}
+              <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">
+                Min {{ s.minimo|round(1) }} &nbsp;&nbsp; Mediana &nbsp;&nbsp; Max {{ s.maximo|round(1) }}
+              </div>
+              <div class="iqr-bar mb-3">
+                <div class="iqr-fill" style="left:{{ q1_pct }}%;width:{{ q3_pct - q1_pct }}%"></div>
+              </div>
+            {% endif %}
+
+            <div class="stat-row">
+              <span class="label">Media</span>
+              <span class="val">{{ s.media|round(2) if s.media is not none else '—' }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="label">Mediana</span>
+              <span class="val">{{ s.mediana|round(2) if s.mediana is not none else '—' }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="label">Desvio Padrao</span>
+              <span class="val">{{ s.desvio_padrao|round(2) if s.desvio_padrao is not none else '—' }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="label">Q1 / Q3</span>
+              <span class="val">
+                {{ s.q1|round(1) if s.q1 is not none else '—' }} /
+                {{ s.q3|round(1) if s.q3 is not none else '—' }}
+              </span>
+            </div>
+            <div class="stat-row">
+              <span class="label">Min / Max</span>
+              <span class="val">
+                {{ s.minimo|round(1) if s.minimo is not none else '—' }} /
+                {{ s.maximo|round(1) if s.maximo is not none else '—' }}
+              </span>
+            </div>
+            <div class="stat-row">
+              <span class="label">Outliers</span>
+              <span class="val" style="color:{% if s.outliers > 0 %}var(--red){% else %}var(--green){% endif %}">
+                {{ s.outliers }}
+              </span>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tabela de dados ── -->
+  <div class="section-title"><i class="bi bi-table"></i> Dados Limpos
+    <span style="color:var(--text);font-size:.8rem;font-weight:400;letter-spacing:0;text-transform:none;margin-left:8px">
+      — linhas em vermelho sao outliers
+    </span>
+  </div>
+
+  <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+    <input class="search-box" type="text" id="searchInput"
+           placeholder="Filtrar por qualquer valor..." oninput="filterTable()" />
+    <span id="rowCount" style="color:var(--muted);font-size:.82rem"></span>
+    <label class="ms-auto" style="font-size:.82rem;color:var(--muted);cursor:pointer">
+      <input type="checkbox" id="onlyOutliers" onchange="filterTable()" style="margin-right:5px"/>
+      Mostrar apenas outliers
+    </label>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table" id="dataTable">
+      <thead>
+        <tr>
+          <th onclick="sortTable(0)">#</th>
+          {% for col in columns %}
+          <th onclick="sortTable({{ loop.index }})">{{ col }} <i class="bi bi-chevron-expand" style="font-size:.65rem;opacity:.5"></i></th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        {% for row in records %}
+        <tr class="{{ 'outlier' if row._outlier else '' }}"
+            data-outlier="{{ 'true' if row._outlier else 'false' }}">
+          <td style="color:var(--muted)">{{ loop.index }}</td>
+          {% for col in columns %}
+            {% set val = row[col] %}
+            <td>
+              {% if val is none %}
+                <span class="null-cell">null</span>
+              {% else %}
+                {{ val }}
+                {% if row._outlier and col in stats %}<span class="outlier-badge">!</span>{% endif %}
+              {% endif %}
+            </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /main -->
+
+<footer>
+  Gerado com <strong>pandas {{ pandas_version }}</strong> + Flask &nbsp;&middot;&nbsp;
+  {{ report.linhas_antes }} linhas brutas &rarr; {{ report.linhas_depois }} limpas
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  /* ── Filtro de busca ── */
+  function filterTable() {
+    const q = document.getElementById("searchInput").value.toLowerCase();
+    const onlyOut = document.getElementById("onlyOutliers").checked;
+    const rows = document.querySelectorAll("#tableBody tr");
+    let visible = 0;
+    rows.forEach(tr => {
+      const text = tr.innerText.toLowerCase();
+      const isOut = tr.dataset.outlier === "true";
+      const show = text.includes(q) && (!onlyOut || isOut);
+      tr.style.display = show ? "" : "none";
+      if (show) visible++;
+    });
+    document.getElementById("rowCount").textContent = `${visible} linha(s)`;
+  }
+
+  /* ── Ordenacao de colunas ── */
+  let sortDir = {};
+  function sortTable(colIdx) {
+    const tbody = document.getElementById("tableBody");
+    const rows  = Array.from(tbody.querySelectorAll("tr"));
+    const dir   = (sortDir[colIdx] = -(sortDir[colIdx] || 1));
+    rows.sort((a, b) => {
+      const av = a.cells[colIdx]?.innerText.trim() ?? "";
+      const bv = b.cells[colIdx]?.innerText.trim() ?? "";
+      const an = parseFloat(av), bn = parseFloat(bv);
+      if (!isNaN(an) && !isNaN(bn)) return dir * (an - bn);
+      return dir * av.localeCompare(bv, "pt", {numeric: true});
+    });
+    rows.forEach(r => tbody.appendChild(r));
+    filterTable();
+  }
+
+  /* Inicializa contador */
+  filterTable();
+</script>
+</body>
+</html>
