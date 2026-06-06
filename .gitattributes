@@ -1,0 +1,3 @@
+# Faz o GitHub Linguist ignorar o HTML dos templates nas estatísticas de linguagem.
+# O projeto é Python — o HTML é só a camada de apresentação do dashboard.
+templates/* linguist-vendored=true
